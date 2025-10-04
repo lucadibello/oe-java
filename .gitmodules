@@ -1,0 +1,3 @@
+[submodule "intel-sgx-toy"]
+	path = intel-sgx-toy
+	url = git@github.com:lucadibello/intel-sgx-toy.git
