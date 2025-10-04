@@ -53,7 +53,7 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-ins
     openjdk-${JDK_MAJOR}-jdk \
     maven \
     nodejs npm \
-    ripgrep fzf lazygit \
+    ripgrep fzf \
     zlib1g-dev libssl-dev \
  && rm -rf /var/lib/apt/lists/*
 
@@ -104,7 +104,8 @@ RUN JH="$(dirname "$(dirname "$(readlink -f "$(command -v javac)")")")"; \
 
 # Optional: install Open Enclave SDK deb (oetools base already includes toolchains; keep if you need exact SDK version)
 WORKDIR /tmp
-RUN wget -q "https://github.com/openenclave/openenclave/releases/download/v${OE_SDK_VERSION}/Ubuntu_2204_open-enclave_${OE_SDK_VERSION}_amd64.deb" \
+RUN curl -fsSL -o "Ubuntu_2204_open-enclave_${OE_SDK_VERSION}_amd64.deb" \
+    "https://github.com/openenclave/openenclave/releases/download/v${OE_SDK_VERSION}/Ubuntu_2204_open-enclave_${OE_SDK_VERSION}_amd64.deb" \
  && dpkg -i "Ubuntu_2204_open-enclave_${OE_SDK_VERSION}_amd64.deb" \
  && rm -f "Ubuntu_2204_open-enclave_${OE_SDK_VERSION}_amd64.deb"
 
@@ -121,6 +122,12 @@ RUN git clone https://github.com/tmux-plugins/tpm "/home/${USER_NAME}/.tmux/plug
  && TMUX_PLUGIN_MANAGER_PATH="/home/${USER_NAME}/.tmux/plugins/tpm" \
       "/home/${USER_NAME}/.tmux/plugins/tpm/bin/install_plugins" || true \
  && chown -R "${USER_UID}:${USER_GID}" "/home/${USER_NAME}/.tmux"
+
+# lazygit (binary release)
+RUN LAZYGIT_VERSION=$(curl -s "https://api.github.com/repos/jesseduffield/lazygit/releases/latest" | \grep -Po '"tag_name": *"v\K[^"]*') && \
+  curl -Lo lazygit.tar.gz "https://github.com/jesseduffield/lazygit/releases/download/v${LAZYGIT_VERSION}/lazygit_${LAZYGIT_VERSION}_Linux_x86_64.tar.gz" && \
+  tar xf lazygit.tar.gz lazygit && \
+  install lazygit -D -t /usr/local/bin/
 
 # Workspace and env for Open Enclave
 WORKDIR /workspaces/project
