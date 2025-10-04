@@ -1,10 +1,20 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Re-exec as root when the image is configured with a non-root default user.
+# The entrypoint needs elevated privileges to manage users and SSHD.
+if [ "${DEVCONTAINER_ALREADY_ROOT:-0}" != "1" ] && [ "$(id -u)" -ne 0 ]; then
+  exec sudo -E DEVCONTAINER_ALREADY_ROOT=1 "$0" "$@"
+fi
+
 # Defaults match Dockerfile ARGs (can be overridden via env)
 DEVUSER="${DEVUSER:-${USER_NAME:-dev}}"
 DEVUID="${DEVUID:-${USER_UID:-1000}}"
 DEVGID="${DEVGID:-${USER_GID:-1000}}"
+NVIM_LISTEN_ADDRESS="${NVIM_LISTEN_ADDRESS:-0.0.0.0:6666}"
+if [ "$NVIM_LISTEN_ADDRESS" = "none" ]; then
+  NVIM_LISTEN_ADDRESS=""
+fi
 
 # Ensure ssh runtime dir
 mkdir -p /var/run/sshd
@@ -62,8 +72,15 @@ fi
 sort -u "$AUTH_KEYS" -o "$AUTH_KEYS" || true
 chown "$DEVUSER:$DEVGID" "$AUTH_KEYS"
 
+# Optional headless Neovim server for remote connections
+if [ -n "$NVIM_LISTEN_ADDRESS" ]; then
+  sudo -Eu "$DEVUSER" env NVIM_LISTEN_ADDRESS="$NVIM_LISTEN_ADDRESS" \
+    nohup nvim --headless --listen "$NVIM_LISTEN_ADDRESS" >/tmp/nvim-headless.log 2>&1 &
+  echo "Neovim headless server listening on $NVIM_LISTEN_ADDRESS (logs: /tmp/nvim-headless.log)"
+fi
+
 # Helpful: print how to connect (once)
-if [ -n "${PRINT_SSH_HINTS:-1}" ]; then
+if [ "${PRINT_SSH_HINTS:-1}" != "0" ]; then
   echo "SSHD ready. Example:"
   echo "  docker run -d -p 2222:22 -e SSH_PUBKEY=\"\$(cat ~/.ssh/id_ed25519.pub)\" <image>"
   echo "  ssh -p 2222 ${DEVUSER}@127.0.0.1"
