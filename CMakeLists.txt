@@ -31,31 +31,61 @@ set(CMAKE_C_STANDARD 11)
 set(OE_CRYPTO_LIB mbedtls
     CACHE STRING "Crypto lib for enclaves (mbedtls|openssl)")
 
-# Global bucket for all generated untrusted stubs (*.u.c from all enclaves)
-# NOTE: the host will link against these files
-set_property(GLOBAL PROPERTY OE_ALL_UNTRUSTED_STUBS "")
-set_property(GLOBAL PROPERTY OE_ALL_UNTRUSTED_INC_DIRS "")
-
-# Options
-option(OE_DEBUG_SIGN "Sign enclaves with --debug" ON)
+# additional config
 option(BUILD_JNI_HOST "Build shared JNI host library" ON)
 option(BUILD_HOST_EXE "Build a small CLI host for tests" OFF)
 
 # Artifacts root
 set(ARTIFACTS_DIR "${CMAKE_BINARY_DIR}/artifacts")
+file(MAKE_DIRECTORY "${ARTIFACTS_DIR}")
 
-# Helper functions
+# Global bucket for all generated untrusted stubs (*.u.c from all enclaves)
+# NOTE: the host will link against these files
+set_property(GLOBAL PROPERTY OE_ALL_UNTRUSTED_STUBS "")
+set_property(GLOBAL PROPERTY OE_ALL_UNTRUSTED_INC_DIRS "")
+set_property(GLOBAL PROPERTY OE_ALL_U_GEN_TARGETS "")
+set_property(GLOBAL PROPERTY OE_ALL_SIGNED_TARGETS "")
+
+# --- Signing key management ---
+# NOTE: If you already have a PEM, pass -DOE_SIGN_KEY="/abs/path/to/private.pem"
+set(OE_SIGN_KEY "" CACHE FILEPATH "Path to enclave signing private key (PEM). If empty, one is generated.")
+
+if (OE_SIGN_KEY STREQUAL "")
+  # Generate keys once into build/signing/
+  set(SIGN_DIR "${CMAKE_BINARY_DIR}/signing")
+  set(GEN_PRIV "${SIGN_DIR}/private.pem")
+  set(GEN_PUB  "${SIGN_DIR}/public.pem")
+  file(MAKE_DIRECTORY "${SIGN_DIR}")
+
+  add_custom_command(
+    OUTPUT "${GEN_PRIV}" "${GEN_PUB}"
+    COMMAND ${CMAKE_COMMAND} -E echo "Generating enclave signing keypair in ${SIGN_DIR}"
+    COMMAND openssl genrsa -out "${GEN_PRIV}" -3 3072
+    COMMAND openssl rsa -in "${GEN_PRIV}" -pubout -out "${GEN_PUB}"
+    COMMENT "OpenSSL: generating enclave signing keypair"
+    VERBATIM)
+
+  add_custom_target(oe_sign_keys ALL
+    DEPENDS "${GEN_PRIV}" "${GEN_PUB}")
+
+  # Export the generated private key path via a GLOBAL property
+  set(OE_SIGN_KEY "${GEN_PRIV}")
+else ()
+  # User-supplied key: create a phony target so enclaves can depend on it
+  add_custom_target(oe_sign_keys)
+endif ()
+
+# --- Additional helper modules --- Make the key path discoverable by subdirs
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 include(OEEnclave)  # provides add_oe_enclave()
 
-# --- Enclaves (add as many as you need) ---
-add_subdirectory(enclaves/foo)
-add_subdirectory(enclaves/bar)
+# --- Enclaves ---
+add_subdirectory(enclaves/example)
 
-# --- Host (consumes all untrusted stubs from all enclaves) ---
+# --- Host ---
 add_subdirectory(host)
 
-# Optional convenience: a single target to sign everything
-# (already done within add_oe_enclave)
-add_custom_target(sign_all DEPENDS ${OE_ALL_SIGNED_TARGETS})
+# --- utility/QoL targets
 
+# Aggregate convenience target
+add_custom_target(sign_all DEPENDS ${OE_ALL_SIGNED_TARGETS})

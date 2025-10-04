@@ -46,6 +46,26 @@ function(add_oe_enclave)
     COMMENT "oeedger8r (untrusted) ${AOE_EDL}"
     VERBATIM)
 
+  # generator target for untrusted stubs (needed to let the host generate these files at runtime!)
+  add_custom_target(gen_u_${AOE_NAME}
+    DEPENDS
+      "${_gen_untrusted}/${AOE_NAME}_u.c"
+      "${_gen_untrusted}/${AOE_NAME}_u.h"
+      "${_gen_untrusted}/${AOE_NAME}_args.h"
+  )
+
+  # Export generator + paths globally for host
+  set_property(GLOBAL APPEND PROPERTY OE_ALL_U_GEN_TARGETS gen_u_${AOE_NAME})
+
+  get_property(_acc_u GLOBAL PROPERTY OE_ALL_UNTRUSTED_STUBS)
+  list(APPEND _acc_u "${_gen_untrusted}/${AOE_NAME}_u.c")
+  set_property(GLOBAL PROPERTY OE_ALL_UNTRUSTED_STUBS "${_acc_u}")
+
+  get_property(_acc_inc GLOBAL PROPERTY OE_ALL_UNTRUSTED_INC_DIRS)
+  list(APPEND _acc_inc "${_gen_untrusted}")
+  list(REMOVE_DUPLICATES _acc_inc)
+  set_property(GLOBAL PROPERTY OE_ALL_UNTRUSTED_INC_DIRS "${_acc_inc}")
+
   # Enclave target
   add_executable(${AOE_NAME}
     "${_gen_trusted}/${AOE_NAME}_t.c"
@@ -74,7 +94,10 @@ function(add_oe_enclave)
   endif()
 
   # Signing
-  set(_signed_dir "${ARTIFACTS_DIR}/enclaves/${AOE_NAME}")
+  if (NOT DEFINED ARTIFACTS_DIR)
+    set(ARTIFACTS_DIR "${CMAKE_BINARY_DIR}/artifacts")
+  endif ()
+  set(_signed_dir  "${ARTIFACTS_DIR}/enclaves/${AOE_NAME}")
   set(_signed_path "${_signed_dir}/${AOE_NAME}.signed")
 
   add_custom_command(
@@ -83,22 +106,12 @@ function(add_oe_enclave)
     COMMAND openenclave::oesign sign
             -e $<TARGET_FILE:${AOE_NAME}>
             -c "${AOE_CONF}"
+            -k "${OE_SIGN_KEY}"
             -o "${_signed_path}"
-            $<$<BOOL:${OE_DEBUG_SIGN}>:--debug>
     BYPRODUCTS "${_signed_path}"
-    COMMENT "Signing enclave '${AOE_NAME}' -> ${_signed_path}"
+    COMMENT "Signing enclave '${AOE_NAME}' with ${OE_SIGN_KEY} -> ${_signed_path}"
     VERBATIM
   )
-
-  # Export stubs to host (global properties)
-  get_property(_acc_u GLOBAL PROPERTY OE_ALL_UNTRUSTED_STUBS)
-  list(APPEND _acc_u "${_gen_untrusted}/${AOE_NAME}_u.c")
-  set_property(GLOBAL PROPERTY OE_ALL_UNTRUSTED_STUBS "${_acc_u}")
-
-  get_property(_acc_inc GLOBAL PROPERTY OE_ALL_UNTRUSTED_INC_DIRS)
-  list(APPEND _acc_inc "${_gen_untrusted}")
-  list(REMOVE_DUPLICATES _acc_inc)
-  set_property(GLOBAL PROPERTY OE_ALL_UNTRUSTED_INC_DIRS "${_acc_inc}")
 
   # Export signed target list (for sign_all convenience)
   set_property(GLOBAL APPEND PROPERTY OE_ALL_SIGNED_TARGETS ${AOE_NAME})
