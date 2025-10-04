@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.11)
+cmake_minimum_required(VERSION 3.20)
 project(oe_host LANGUAGES C CXX)
 
 find_package(OpenEnclave CONFIG REQUIRED)

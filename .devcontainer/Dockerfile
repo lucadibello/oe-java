@@ -9,6 +9,7 @@ ARG NVIM_REF=stable
 ARG CMAKE_BUILD_TYPE=RelWithDebInfo
 ENV CMAKE_INSTALL_PREFIX=/nvim-out
 
+
 # Use bash + pipefail for safety in RUN steps
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
@@ -35,8 +36,12 @@ FROM openenclavedockerregistry.azurecr.io/oetools-22.04:2025.03.13148
 ARG USER_NAME=dev
 ARG USER_UID=1000
 ARG USER_GID=1000
+
 ARG OE_SDK_VERSION=0.19.13
 ARG JDK_MAJOR=21
+
+ARG CMAKE_VERSION=4.1.2
+ARG CMAKE_ARCH=x86_64
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
@@ -128,6 +133,16 @@ RUN LAZYGIT_VERSION=$(curl -s "https://api.github.com/repos/jesseduffield/lazygi
   curl -Lo lazygit.tar.gz "https://github.com/jesseduffield/lazygit/releases/download/v${LAZYGIT_VERSION}/lazygit_${LAZYGIT_VERSION}_Linux_x86_64.tar.gz" && \
   tar xf lazygit.tar.gz lazygit && \
   install lazygit -D -t /usr/local/bin/
+
+# install CMake (currently, we use this format for destination folder /usr/local/cmake-<version>-Linux-<arch>/)
+RUN set -eux; \
+    echo "Installing CMake ${CMAKE_VERSION}..." && \
+    curl -fsSLO "https://cmake.org/files/v${CMAKE_VERSION%.*}/cmake-${CMAKE_VERSION}-linux-${CMAKE_ARCH}.tar.gz" && \
+    tar -xzf "cmake-${CMAKE_VERSION}-linux-${CMAKE_ARCH}.tar.gz" && \
+    mv "cmake-${CMAKE_VERSION}-linux-${CMAKE_ARCH}" /opt/cmake && \
+    ln -sf /opt/cmake/bin/* /usr/local/bin/ && \
+    cmake --version && \
+    rm -rf /tmp/cmake-${CMAKE_VERSION}-linux-${CMAKE_ARCH}*
 
 # Workspace and env for Open Enclave
 WORKDIR /workspaces/project
