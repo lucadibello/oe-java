@@ -43,6 +43,9 @@ ARG JDK_MAJOR=21
 ARG CMAKE_VERSION=4.1.2
 ARG CMAKE_ARCH=x86_64
 
+ARG NODE_VERSION=22.20.0
+ARG NODE_ARCH=x64
+
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 ENV NVIM_LISTEN_ADDRESS=0.0.0.0:6666
@@ -132,7 +135,8 @@ RUN git clone https://github.com/tmux-plugins/tpm "/home/${USER_NAME}/.tmux/plug
 RUN LAZYGIT_VERSION=$(curl -s "https://api.github.com/repos/jesseduffield/lazygit/releases/latest" | \grep -Po '"tag_name": *"v\K[^"]*') && \
   curl -Lo lazygit.tar.gz "https://github.com/jesseduffield/lazygit/releases/download/v${LAZYGIT_VERSION}/lazygit_${LAZYGIT_VERSION}_Linux_x86_64.tar.gz" && \
   tar xf lazygit.tar.gz lazygit && \
-  install lazygit -D -t /usr/local/bin/
+  install lazygit -D -t /usr/local/bin/ && \
+  echo "LazyGit installed successfully."
 
 # install CMake (currently, we use this format for destination folder /usr/local/cmake-<version>-Linux-<arch>/)
 RUN set -eux; \
@@ -141,8 +145,25 @@ RUN set -eux; \
     tar -xzf "cmake-${CMAKE_VERSION}-linux-${CMAKE_ARCH}.tar.gz" && \
     mv "cmake-${CMAKE_VERSION}-linux-${CMAKE_ARCH}" /opt/cmake && \
     ln -sf /opt/cmake/bin/* /usr/local/bin/ && \
+    echo "Verifying CMake installation..." && \
     cmake --version && \
-    rm -rf /tmp/cmake-${CMAKE_VERSION}-linux-${CMAKE_ARCH}*
+    rm -rf /tmp/cmake-${CMAKE_VERSION}-linux-${CMAKE_ARCH}* && \
+    echo "CMake installed successfully."
+
+# install Node.JS LST (useful for tools!)
+RUN set -eux; \
+    echo "Installing Node.js v${NODE_VERSION} for ${NODE_ARCH}..." && \
+    wget -q "https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-${NODE_ARCH}.tar.xz" && \
+    tar -xf "node-v${NODE_VERSION}-${NODE_ARCH}.tar.xz" && \
+    mv "node-v${NODE_VERSION}-${NODE_ARCH}" /usr/local/node-v${NODE_VERSION} && \
+    ln -sf /usr/local/node-v${NODE_VERSION}/bin/node /usr/local/bin/node && \
+    ln -sf /usr/local/node-v${NODE_VERSION}/bin/npm /usr/local/bin/npm && \
+    ln -sf /usr/local/node-v${NODE_VERSION}/bin/npx /usr/local/bin/npx && \
+    echo "Verifying Node.js installation..." && \
+    node -v && npm -v && \
+    rm -rf /tmp/node-v${NODE_VERSION}-${NODE_ARCH}* && \
+    echo "Node.js installed successfully."
+    
 
 # Workspace and env for Open Enclave
 WORKDIR /workspaces/project
