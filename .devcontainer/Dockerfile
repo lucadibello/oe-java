@@ -114,7 +114,7 @@ COPY --from=nvim-builder /nvim-out/ /usr/local/
 RUN nvim --version | head -n 3
 
 # Import neovim config from github + fix ownership
-RUN git clone git@github.com:lucadibello/neovim.git /home/${USER_NAME}/.config/nvim \
+RUN git clone https://github.com/jesseduffield/lazygit.git /home/${USER_NAME}/.config/nvim \
  && chown -R "${USER_UID}:${USER_GID}" "/home/${USER_NAME}/.config"
 
 # tmux plugin manager (install; then fix ownership)
