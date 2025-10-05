@@ -85,5 +85,21 @@ if [ -n "${GIT_USER_NAME:-}" ] && [ -n "${GIT_USER_EMAIL:-}" ]; then
   sudo -u "$DEVUSER" git config --global user.email "$GIT_USER_EMAIL"
 fi
 
+# start headless nvim watchdog (if you want it always-on)
+cat >/usr/local/bin/nvim-server.sh <<'EOS'
+#!/usr/bin/env bash
+set -euo pipefail
+SOCK="${NVIM_LISTEN_ADDRESS:-/tmp/nvim.sock}"
+mkdir -p "$(dirname "$SOCK")"
+while :; do
+  rm -f "$SOCK" || true
+  nvim --headless --listen "$SOCK" || true
+  sleep 1
+done
+EOS
+chmod +x /usr/local/bin/nvim-server.sh
+/usr/local/bin/nvim-server.sh &
+echo "[entrypoint] nvim server started (pid $!)"
+
 # Exec original CMD (sshd -D -e by default)
 exec "$@"
