@@ -1,6 +1,9 @@
 {
   "version": 3,
-  "cmakeMinimumRequired": { "major": 3, "minor": 19 },
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 19
+  },
   "configurePresets": [
     {
       "name": "default",
@@ -9,9 +12,19 @@
       "binaryDir": "${sourceDir}/build",
       "cacheVariables": {
         "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
-        "OE_DEBUG_SIGN": "ON",
         "BUILD_JNI_HOST": "ON",
         "BUILD_HOST_EXE": "OFF"
+      }
+    },
+    {
+      "name": "test",
+      "displayName": "Default build",
+      "generator": "Unix Makefiles",
+      "binaryDir": "${sourceDir}/build",
+      "cacheVariables": {
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+        "BUILD_JNI_HOST": "ON",
+        "BUILD_HOST_EXE": "ON"
       }
     }
   ],
@@ -19,6 +32,10 @@
     {
       "name": "default",
       "configurePreset": "default"
+    },
+    {
+      "name": "test",
+      "configurePreset": "test"
     }
   ]
 }
