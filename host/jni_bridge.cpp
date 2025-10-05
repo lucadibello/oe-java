@@ -41,8 +41,7 @@ static void erase_enclave(long id, oe_enclave_t **out) {
 }
 
 // --- JNI for OeManager ---
-
-extern "C" JNIEXPORT jlong JNICALL Java_org_oejava_OeManager_create(
+extern "C" JNIEXPORT jlong JNICALL Java_org_oejava_oe_ExampleEnclave_create(
     JNIEnv *env, jclass, jstring jpath, jboolean debug) {
   const char *path = env->GetStringUTFChars(jpath, nullptr);
   uint32_t flags = debug ? OE_ENCLAVE_FLAG_DEBUG : 0;
@@ -63,7 +62,7 @@ extern "C" JNIEXPORT jlong JNICALL Java_org_oejava_OeManager_create(
 }
 
 extern "C" JNIEXPORT void JNICALL
-Java_org_oejava_OeManager_destroy(JNIEnv *env, jclass, jlong handle) {
+Java_org_oejava_oe_ExampleEnclave_destroy(JNIEnv *env, jclass, jlong handle) {
   // destroy the enclave, and return pointer!
   oe_enclave_t *e = nullptr;
   erase_enclave(handle, &e);
