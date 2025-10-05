@@ -1,3 +1,5 @@
+import org.gradle.api.tasks.compile.JavaCompile
+
 plugins {
     // Apply the application plugin to add support for building a CLI application in Java.
     application
@@ -14,6 +16,17 @@ java {
     toolchain {
         languageVersion = JavaLanguageVersion.of(21)
     }
+}
+
+val jniHeaderOutput = rootProject.layout.buildDirectory.dir("generated/jni")
+
+tasks.named<JavaCompile>("compileJava") {
+    options.headerOutputDirectory.set(jniHeaderOutput)
+    outputs.dir(jniHeaderOutput)
+}
+
+tasks.named("build") {
+    dependsOn(tasks.named("compileJava"))
 }
 
 tasks.run {
