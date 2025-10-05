@@ -1,5 +1,7 @@
 # Additional ignored file here
-# ...
+
+# avoid versioning any generated file!
+compile_commands.json
 
 # Pre-bundled ignores
 # NOTE: source - https://gist.github.com/fedir/cd58012d42c8c1edbb3fff611de6c2f6
