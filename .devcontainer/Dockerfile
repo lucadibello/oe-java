@@ -187,9 +187,22 @@ RUN install -d -m 700 -o "${USER_UID}" -g "${USER_GID}" "/home/${USER_NAME}/.ssh
 COPY .devcontainer/devcontainer-entrypoint.sh /usr/local/bin/devcontainer-entrypoint
 RUN chmod +x /usr/local/bin/devcontainer-entrypoint
 
+# Import any additional system services defined in "./services/"
+COPY .devcontainer/services/ /etc/systemd/system/
+RUN set -eux; \
+    # Reload systemd unit definitions
+    systemctl daemon-reload; \
+    # Enable every custom service we just copied
+    for svc in /etc/systemd/system/*.service; do \
+        [ -f "$svc" ] && systemctl enable "$(basename "$svc")"; \
+    done
+
 # Drop root for normal usage
 USER ${USER_UID}:${USER_GID}
 
+# expose SSH + Neovim remote
 EXPOSE 22 6666
+
+# Define default command
 ENTRYPOINT ["/usr/bin/tini", "--", "/usr/local/bin/devcontainer-entrypoint"]
 CMD ["/usr/sbin/sshd", "-D", "-e"]

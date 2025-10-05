@@ -72,13 +72,6 @@ fi
 sort -u "$AUTH_KEYS" -o "$AUTH_KEYS" || true
 chown "$DEVUSER:$DEVGID" "$AUTH_KEYS"
 
-# Optional headless Neovim server for remote connections
-if [ -n "$NVIM_LISTEN_ADDRESS" ]; then
-  sudo -Eu "$DEVUSER" env NVIM_LISTEN_ADDRESS="$NVIM_LISTEN_ADDRESS" \
-    nohup nvim --headless --listen "$NVIM_LISTEN_ADDRESS" >/tmp/nvim-headless.log 2>&1 &
-  echo "Neovim headless server listening on $NVIM_LISTEN_ADDRESS (logs: /tmp/nvim-headless.log)"
-fi
-
 # Helpful: print how to connect (once)
 if [ "${PRINT_SSH_HINTS:-1}" != "0" ]; then
   echo "SSHD ready. Example:"
