@@ -48,9 +48,12 @@ set_property(GLOBAL PROPERTY OE_ALL_SIGNED_TARGETS "")
 
 # --- Signing key management ---
 # NOTE: If you already have a PEM, pass -DOE_SIGN_KEY="/abs/path/to/private.pem"
-set(OE_SIGN_KEY "" CACHE FILEPATH "Path to enclave signing private key (PEM). If empty, one is generated.")
+set(OE_SIGN_KEY ""
+  CACHE FILEPATH
+  "Path to enclave signing private key (PEM). If empty, one is generated."
+)
 
-if (OE_SIGN_KEY STREQUAL "")
+if(OE_SIGN_KEY STREQUAL "")
   # Generate keys once into build/signing/
   set(SIGN_DIR "${CMAKE_BINARY_DIR}/signing")
   set(GEN_PRIV "${SIGN_DIR}/private.pem")
@@ -59,7 +62,8 @@ if (OE_SIGN_KEY STREQUAL "")
 
   add_custom_command(
     OUTPUT "${GEN_PRIV}" "${GEN_PUB}"
-    COMMAND ${CMAKE_COMMAND} -E echo "Generating enclave signing keypair in ${SIGN_DIR}"
+    COMMAND ${CMAKE_COMMAND} -E
+      echo "Generating enclave signing keypair in ${SIGN_DIR}"
     COMMAND openssl genrsa -out "${GEN_PRIV}" -3 3072
     COMMAND openssl rsa -in "${GEN_PRIV}" -pubout -out "${GEN_PUB}"
     COMMENT "OpenSSL: generating enclave signing keypair"
@@ -70,10 +74,10 @@ if (OE_SIGN_KEY STREQUAL "")
 
   # Export the generated private key path via a GLOBAL property
   set(OE_SIGN_KEY "${GEN_PRIV}")
-else ()
+else()
   # User-supplied key: create a phony target so enclaves can depend on it
   add_custom_target(oe_sign_keys)
-endif ()
+endif()
 
 # --- Additional helper modules --- Make the key path discoverable by subdirs
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
