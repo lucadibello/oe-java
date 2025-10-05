@@ -153,15 +153,15 @@ RUN set -eux; \
 # install Node.JS LST (useful for tools!)
 RUN set -eux; \
     echo "Installing Node.js v${NODE_VERSION} for ${NODE_ARCH}..." && \
-    wget -q "https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-${NODE_ARCH}.tar.xz" && \
-    tar -xf "node-v${NODE_VERSION}-${NODE_ARCH}.tar.xz" && \
-    mv "node-v${NODE_VERSION}-${NODE_ARCH}" /usr/local/node-v${NODE_VERSION} && \
+    curl -fsSLO "https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-${NODE_ARCH}.tar.xz" && \
+    tar -xf "node-v${NODE_VERSION}-linux-${NODE_ARCH}.tar.xz" && \
+    mv "node-v${NODE_VERSION}-linux-${NODE_ARCH}" /usr/local/node-v${NODE_VERSION} && \
     ln -sf /usr/local/node-v${NODE_VERSION}/bin/node /usr/local/bin/node && \
     ln -sf /usr/local/node-v${NODE_VERSION}/bin/npm /usr/local/bin/npm && \
     ln -sf /usr/local/node-v${NODE_VERSION}/bin/npx /usr/local/bin/npx && \
     echo "Verifying Node.js installation..." && \
     node -v && npm -v && \
-    rm -rf /tmp/node-v${NODE_VERSION}-${NODE_ARCH}* && \
+    rm -rf /tmp/node-v${NODE_VERSION}-linux-${NODE_ARCH}* && \
     echo "Node.js installed successfully."
     
 
