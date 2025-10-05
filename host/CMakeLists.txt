@@ -16,6 +16,10 @@ endif()
 
 # ---- JNI shared library (host/JNI bridge)
 if(BUILD_JNI_HOST)
+  # detect JNI from java JDK
+  find_package(JNI REQUIRED)
+
+  # create shared library + link against host libs
   add_library(oe_jni SHARED
     ${ALL_U_STUBS}
     ${CMAKE_SOURCE_DIR}/host/jni_bridge.cpp
@@ -27,19 +31,27 @@ if(BUILD_JNI_HOST)
     add_dependencies(oe_jni ${ALL_U_GEN_TGTS})
   endif()
 
-  target_include_directories(oe_jni PRIVATE ${ALL_U_INC_DIRS})
-  target_link_libraries(oe_jni PRIVATE openenclave::oehost)
-  target_compile_features(oe_jni PRIVATE c_std_11 cxx_std_17)
-  set_target_properties(oe_jni PROPERTIES OUTPUT_NAME "oe_jni")
+  # Add JNI and your generated stub dirs
+  target_include_directories(oe_jni PRIVATE
+    ${JNI_INCLUDE_DIRS}
+    ${ALL_U_INC_DIRS}
+  )
 
-  # JNI headers (requires JAVA_HOME)
-  if(DEFINED ENV{JAVA_HOME})
-    target_include_directories(oe_jni PRIVATE
-      "$ENV{JAVA_HOME}/include"
-      "$ENV{JAVA_HOME}/include/linux"
-      "$ENV{JAVA_HOME}/include/darwin"
-      "$ENV{JAVA_HOME}/include/win32")
-  endif()
+  # Link OE host; JNI libs are usually headers-only on Linux,
+  # but harmless to link if provided
+  target_link_libraries(oe_jni PRIVATE
+    openenclave::oehost
+    ${JNI_LIBRARIES}
+  )
+
+  target_compile_features(oe_jni PRIVATE c_std_11 cxx_std_17)
+  # Drop the shared lib in build/lib for easy pickup
+  set_target_properties(oe_jni PROPERTIES
+    OUTPUT_NAME "oe_jni"
+    # macOS .dylib, Windows .dll
+    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
+  )
 endif()
 
 # ---- Optional small CLI for testing
