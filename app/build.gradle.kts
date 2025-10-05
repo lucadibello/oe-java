@@ -32,9 +32,14 @@ java {
     }
 }
 
+tasks.run {
+    // Tell the JVM where to find liboe_jni.so
+    jvmArgs("-Djava.library.path=${project.rootDir}/build/lib")
+}
+
 application {
     // Define the main class for the application.
-    mainClass = "org.example.App"
+    mainClass = "org.oejava.example.App"
 }
 
 tasks.named<Test>("test") {
