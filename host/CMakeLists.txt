@@ -8,7 +8,8 @@ get_property(ALL_U_STUBS     GLOBAL PROPERTY OE_ALL_UNTRUSTED_STUBS)
 get_property(ALL_U_INC_DIRS  GLOBAL PROPERTY OE_ALL_UNTRUSTED_INC_DIRS)
 get_property(ALL_U_GEN_TGTS  GLOBAL PROPERTY OE_ALL_U_GEN_TARGETS)
 
-# Mark generated sources so configure doesn’t fail if files aren’t present yet
+# Mark generated sources so configure doesn’t fail if files
+# aren’t present yet
 if(ALL_U_STUBS)
   set_source_files_properties(${ALL_U_STUBS} PROPERTIES GENERATED TRUE)
 endif()
@@ -32,20 +33,21 @@ if(BUILD_JNI_HOST)
   set_target_properties(oe_jni PROPERTIES OUTPUT_NAME "oe_jni")
 
   # JNI headers (requires JAVA_HOME)
-  if (DEFINED ENV{JAVA_HOME})
+  if(DEFINED ENV{JAVA_HOME})
     target_include_directories(oe_jni PRIVATE
       "$ENV{JAVA_HOME}/include"
       "$ENV{JAVA_HOME}/include/linux"
       "$ENV{JAVA_HOME}/include/darwin"
       "$ENV{JAVA_HOME}/include/win32")
-  endif ()
-endif ()
+  endif()
+endif()
 
 # ---- Optional small CLI for testing
 if(BUILD_HOST_EXE)
   add_executable(oe_cli
     ${ALL_U_STUBS}
-    ${CMAKE_SOURCE_DIR}/host/host.cpp
+    ${CMAKE_SOURCE_DIR}/host/host.cpp # test logic (start enclave + make OCALLs)
+    ${CMAKE_SOURCE_DIR}/host/ocalls_host.cpp # link host OCALL implementations
   )
   if(ALL_U_GEN_TGTS)
     add_dependencies(oe_cli ${ALL_U_GEN_TGTS})
@@ -53,4 +55,17 @@ if(BUILD_HOST_EXE)
   target_include_directories(oe_cli PRIVATE ${ALL_U_INC_DIRS})
   target_link_libraries(oe_cli PRIVATE openenclave::oehost)
   target_compile_features(oe_cli PRIVATE c_std_11 cxx_std_17)
+
+  # Place executable in a predictable folder
+  set_target_properties(oe_cli PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
+  )
+
+  # `run` target to run the test host
+  add_custom_target(run
+    COMMAND "${CMAKE_BINARY_DIR}/bin/oe_cli"
+    DEPENDS oe_cli
+    WORKING_DIRECTORY "${CMAKE_BINARY_DIR}"
+    COMMENT "Running test host: oe_cli"
+  )
 endif()
