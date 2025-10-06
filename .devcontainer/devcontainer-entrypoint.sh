@@ -12,6 +12,7 @@ DEVUSER="${DEVUSER:-${USER_NAME:-dev}}"
 DEVUID="${DEVUID:-${USER_UID:-1000}}"
 DEVGID="${DEVGID:-${USER_GID:-1000}}"
 NVIM_LISTEN_ADDRESS="${NVIM_LISTEN_ADDRESS:-0.0.0.0:6666}"
+export NVIM_LISTEN_ADDRESS
 if [ "$NVIM_LISTEN_ADDRESS" = "none" ]; then
   NVIM_LISTEN_ADDRESS=""
 fi
@@ -98,8 +99,20 @@ while :; do
 done
 EOS
 chmod +x /usr/local/bin/nvim-server.sh
-/usr/local/bin/nvim-server.sh &
-echo "[entrypoint] nvim server started (pid $!)"
+
+NVIM_ENV_PRESERVE="NVIM_LISTEN_ADDRESS"
+if [ -n "${SSH_AUTH_SOCK:-}" ]; then
+  NVIM_ENV_PRESERVE="${NVIM_ENV_PRESERVE},SSH_AUTH_SOCK"
+fi
+
+if [ "$DEVUSER" = "root" ]; then
+  /usr/local/bin/nvim-server.sh &
+  NVIM_SERVER_PID=$!
+else
+  sudo --preserve-env="$NVIM_ENV_PRESERVE" -u "$DEVUSER" /usr/local/bin/nvim-server.sh &
+  NVIM_SERVER_PID=$!
+fi
+echo "[entrypoint] nvim server started (pid $NVIM_SERVER_PID)"
 
 # Exec original CMD (sshd -D -e by default)
 exec "$@"
