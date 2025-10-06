@@ -13,15 +13,13 @@ public class App {
   }
 
   public static void main(String[] args) {
-    long h = ExampleEnclave.create("/abs/path/to/example.signed", true);
+    long h = ExampleEnclave.create("../build/artifacts/enclaves/example/example.signed", true);
     if (h == 0)
       throw new RuntimeException("Failed to create enclave");
     try {
       int rc = ExampleEnclave.helloworld(h);
       if (rc != 0)
         throw new RuntimeException("ECALL failed rc=" + rc);
-    } finally {
-      ExampleEnclave.destroy(h);
-    }
+    } finally { ExampleEnclave.destroy(h); }
   }
 }
