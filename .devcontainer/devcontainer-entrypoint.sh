@@ -86,7 +86,7 @@ if [ -n "${GIT_USER_NAME:-}" ] && [ -n "${GIT_USER_EMAIL:-}" ]; then
   sudo -u "$DEVUSER" git config --global user.email "$GIT_USER_EMAIL"
 fi
 
-# start headless nvim watchdog (if you want it always-on)
+# start headless nvim watchdog
 cat >/usr/local/bin/nvim-server.sh <<'EOS'
 #!/usr/bin/env bash
 set -euo pipefail
