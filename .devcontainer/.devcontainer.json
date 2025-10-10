@@ -10,7 +10,7 @@
             "type": "bind"
         },
         {
-            "source": "${localEnv:HOME}/.tmux.alpine.conf",
+            "source": "${localEnv:HOME}/.tmux.linux.conf",
             "target": "/root/.tmux.conf",
             "type": "bind"
         }
